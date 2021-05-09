@@ -1,2 +1,3 @@
 # Ignore compiled file
-/cache
+cache
+RAM-Data.txt
