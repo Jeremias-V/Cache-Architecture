@@ -4,6 +4,17 @@
 #include "../include/Initialize.h"
 
 char RAM_Data[2048][OFFSET_SIZE];
+size_t firstCall = 1;
+
+void interface(){
+    if(firstCall){
+        printf("==================================================\n");
+        printf("||\tSet Associative LRU Cache Simulation\t||\n");
+        printf("==================================================\n");
+        firstCall = 0;
+    }
+    //printf();
+}
 
 void readRAM(){
 
@@ -33,8 +44,6 @@ void readRAM(){
 
 int main(){
 
-    size_t i, j;
-
     // Cache Declaration
     CacheSet Cache[NUMBER_OF_BLOCKS][BLOCK_SIZE];
     initalizeCache(Cache);
@@ -42,8 +51,11 @@ int main(){
     // Read RAM File.
     readRAM();
    
+    // Call read function
+    interface();
 
     /* This is for printing the lines and verifying
+    size_t i, j;
     for(i = 0; i < 2048; i ++){
         printf("LINE %ld =\t", i+1);
         for(j = 0; j < OFFSET_SIZE; j++){
