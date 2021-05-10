@@ -29,7 +29,6 @@ size_t getLesserBlock(size_t idx){
     return block;
 }
 
-// si me toca reemplazar entonces es miss
 int readCache(size_t idx, size_t offset, size_t tag){
     // Si el tag de la cache es igual al tag de la direccion que entra y el bit de validez esta en uno es hit
     // El bit de validez se pone en uno siempre que se traiga algo de la RAM
@@ -102,7 +101,6 @@ void writeOffset(size_t block, size_t idx){
     size_t i;
     for(i = 0; i < 8; i++){
         Cache[block][idx].Data[i].M = binToInt8(&RAM_Data[getAddress(i)]);
-        //printf("GOTO : %d\tVAL : %d\n", getAddress(i), Cache[block][idx].Data[i].M);
     }
 }
 
@@ -119,13 +117,11 @@ void writeCache(size_t idx, size_t tag){
         }
     }
     
-    //missCount++;
     // LRU
     size_t block = getLesserBlock(idx);
     Cache[block][idx].usedTime = ++time;
     Cache[block][idx].Tag = tag;
     writeOffset(block, idx);
-    // funcion de escribir
 }
 
 size_t intToBin(size_t n, char ans[11]){
@@ -207,7 +203,7 @@ size_t binToInt5(char * bin){
 
 void interface(){
     char opt, binNum[11], binVal[8];
-    size_t b10offset, b10index, b10tag, i;
+    size_t b10offset, b10index, b10tag, i, j, k;
     int value, r;
     int cacheAns;
     if(firstCall){
@@ -217,11 +213,11 @@ void interface(){
         printf("> '1' Read from Cache.\n");
         printf("> '2' Write to Mem.\n");
         printf("> '3' Exit.\n");
+        printf("> '4' Manual read from cache.\n");
+        printf("> '5' Print Cache contents.\n");
         printf("==================================================\n");
         firstCall = FALSE;
     }
-    //opt = getchar();
-    //clearBuffer();
     scanf(" %c", &opt);
     switch (opt){
     case '1':
@@ -246,7 +242,6 @@ void interface(){
         interface();
         break;
     case '2':
-        /* ESCRIBIR UN DATO DE 8 BITS A LA CACHE */
         scanf(" %d %d", &r, &value);
         if(((r >= 0) && (r <= 2047))){
             if(((value >= 0) && (value < 256))){
@@ -257,13 +252,17 @@ void interface(){
                 b10tag = binToInt5(binaryTag);
                 b10index = binToInt3(binaryIndex);
                 printf("\n========================================\nUser Address = %s\nAddress in Base 10 = %d\nValue to store = %d\n========================================\n", binNum, r, value);
-                writeCache(b10index, b10tag);
                 intToBin8(value, &binVal);
+                for(i = 0; i < NUMBER_OF_BLOCKS; i++){
+                    if(Cache[i][b10index].Tag == b10tag){
+                        Cache[i][b10index].V = 0;
+                    }
+                }
                 for(i = 0; i < 8; i++){
                     RAM_Data[r][i] = binVal[i];
                 }
+                writeCache(b10index, b10tag);
                 writeRAM();
-
             }
         }else{
             printf("\nERROR: After selecting 2. you must type ADDRESS VALUE where 1 <= ADRESS <= 2048, 0 <= VALUE <= 255.\n\n");
@@ -271,6 +270,45 @@ void interface(){
         interface();
         break;
     case '3':
+        break;
+    case '4':
+        scanf(" %d", &r);
+        if(((r >= 0) && (r <= 2047))){
+            intToBin(r, &binNum);
+            getOffset(binNum);
+            getIndex(binNum);
+            getTag(binNum);
+            b10tag = binToInt5(binaryTag);
+            b10index = binToInt3(binaryIndex);
+            b10offset = binToInt3(binaryOffset);
+            printf("\n========================================\nUser Address = %s\nAddress in Base 10 = %d\n========================================\n", binNum, r);
+            cacheAns = readCache(b10index, b10offset, b10tag);
+            if(cacheAns == -1){
+                missCount++;
+                printf("----- MISS -----\nRate = %.2f%\n---------------\n========================================\n", (1 - ((float)hitCount/((float)hitCount + (float)missCount))) * 100);
+                writeCache(b10index, b10tag);
+            }else{
+                hitCount++;
+                printf("+++++ HIT +++++\nLine in .txt = %d\nValue = %d\n+++++++++++++++\n========================================\n", r+1, cacheAns);
+            }
+        }else{
+            printf("\nERROR: After selecting 2. you must type ADDRESS VALUE where 1 <= ADRESS <= 2048, 0 <= VALUE <= 255.\n\n");
+        }
+        interface();
+        break;
+    case '5':
+        for(i = 0; i < NUMBER_OF_BLOCKS; i++){
+            printf("\n\n============================ BLOCK #%d ============================\n", i+1);
+            for(j = 0; j < BLOCK_SIZE; j++){
+                printf("\n+ SET #%d: V = %d Tag = %d Time = %d\nData Contents:\nM = [", j, Cache[i][j].V, Cache[i][j].Tag, Cache[i][j].usedTime);
+                for(k = 0; k < 8; k++){
+                    printf(" %d", Cache[i][j].Data[k].M);
+                }
+                printf(" ]\n");
+            }
+        }
+        printf("\n\n============================ END OF CONTENTS =======================\n\n");
+        interface();
         break;
     default:
         printf("\nInvalid option, try '1' or '2' or '3'.\n");
