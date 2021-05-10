@@ -9,14 +9,14 @@
 
 typedef struct{
 
-    size_t M: 3;
+    size_t M: 8;
 
 } MemData;
 
 typedef struct{
 
     size_t V : 1;
-    size_t Tag : 2;
+    size_t Tag : 5;
     size_t usedTime;
     MemData Data[8];
 
